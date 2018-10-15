@@ -1,8 +1,41 @@
 #include "stdafx.h"
 #include <sstream>
 #include "SFML\Graphics.hpp"
+
+
 using namespace sf;
 using namespace std;
+
+//branches setup
+void updateBranches(int seed);
+const int numBranches = 6;
+Sprite branches[numBranches];
+enum class side { LEFT, RIGHT, NONE };
+side branchPosition[numBranches];
+
+void updateBranches(int seed)
+{
+	// Move all the branches down one place
+	for (int j = numBranches - 1; j > 0; j--)
+	{
+		branchPosition[j] = branchPosition[j - 1];
+	}
+	
+	srand((int)time(0) + seed);
+	int r = (rand() % 5);
+	switch (r)
+	{
+	case 0:
+		branchPosition[0] = side::LEFT;
+		break;
+	case 1:
+		branchPosition[0] = side::RIGHT;
+		break;
+	case 2:
+		branchPosition[0] = side::NONE;
+		break;
+	}
+}
 
 int main()
 {
@@ -15,11 +48,15 @@ int main()
 	Texture textureTree;
 	Texture textureBee;
 	Texture textureCloud;
+	Texture textureBranch;
+	Texture texturePlayer;
 
 	textureCloud.loadFromFile("graphics/cloud.png");
 	textureBee.loadFromFile("graphics/bee.png");
 	textureTree.loadFromFile("graphics/tree.png");
 	textureBackground.loadFromFile("graphics/background.png");
+	textureBranch.loadFromFile("graphics/branch.png");
+	texturePlayer.loadFromFile("graphics/player.png");
 
 	//Create and attach Sprite to texture
 	Sprite spriteBackground;
@@ -28,13 +65,38 @@ int main()
 	Sprite spriteCloud;
 	Sprite spriteCloud2;
 	Sprite spriteCloud3;
+	Sprite spritePlayer;
 
+	//branch sprite func
+	for (int i = 0; i < numBranches; i++)
+	{
+		branches[i].setTexture(textureBranch);
+		branches[i].setPosition(-2000, -2000);
+		branches[i].setOrigin(220, 20);
+	}
+
+	//Assign textures, pos, side etc
 	spriteCloud.setTexture(textureCloud);
 	spriteCloud2.setTexture(textureCloud);
 	spriteCloud3.setTexture(textureCloud);
+	
 	spriteCloud.setPosition(0, 0);
 	spriteCloud2.setPosition(0, 250);
 	spriteCloud3.setPosition(0, 500);
+	
+	spriteTree.setTexture(textureTree);
+	spriteTree.setPosition(810, 0);
+	
+	spriteBackground.setTexture(textureBackground);
+	spriteBackground.setPosition(0, 0);
+	
+	spriteBee.setTexture(textureBee);
+	spriteBee.setPosition(0, 810);
+	
+	spritePlayer.setTexture(texturePlayer);
+	spritePlayer.setPosition(580, 720);
+	side playerSide = side::LEFT;
+
 	//cloud movement
 	bool cloudActive = false;
 	bool cloud2Active = false;
@@ -42,16 +104,12 @@ int main()
 	float cloudSpeed = 0.0f;
 	float cloud2Speed = 0.0f;
 	float cloud3Speed = 0.0f;
-	spriteBee.setTexture(textureBee);
-	spriteBee.setPosition(0, 810);
+	
 	//bee basic movement
 	bool beeActive = false;
 	float beeSpeed = 0.0f;
-	spriteTree.setTexture(textureTree);
-	spriteTree.setPosition(810, 0);
-	spriteBackground.setTexture(textureBackground);
-	spriteBackground.setPosition(0, 0);
 
+	
 	//FONTS AND TEXT
 	int score = 0;
 
@@ -81,7 +139,6 @@ int main()
 	bool paused = true;
 
 	//Time bar
-
 	RectangleShape timeBar;
 	float timebarStartWidth = 400;
 	float timebarHeight = 80;
@@ -93,11 +150,15 @@ int main()
 	float reaminingTime = 6.0f;
 	float timeBarWidthPerSecond = timebarStartWidth / reaminingTime;
 
-	
+	updateBranches(1);
+	updateBranches(2);
+	updateBranches(3);
+	updateBranches(4);
+	updateBranches(5);
+
 	while (window.isOpen())
 	{
 		//Handle Input
-
 		if (Keyboard::isKeyPressed(Keyboard::Escape))
 		{
 			window.close();
@@ -105,9 +166,9 @@ int main()
 
 		if (Keyboard::isKeyPressed(Keyboard::Return))
 		{
-			paused = false; 
+			paused = false;
 			score = 0;
-			reaminingTime = 5; 
+			reaminingTime = 5;
 		}
 
 		if (!paused)
@@ -211,7 +272,7 @@ int main()
 				cloud3Speed = (rand() % 200);
 
 				//height
-				srand((int)time(0) * 30);
+				srand((int)time(0) * 300);
 				float height = (rand() % 450) - 150;
 				spriteCloud3.setPosition(-200, height);
 				cloud3Active = true;
@@ -230,29 +291,55 @@ int main()
 			stringstream ss;
 			ss << "Score =" << score;
 			scoreText.setString(ss.str());
+			
+			//update branches
+			for (int i = 0; i < numBranches; i++)
+			{
+				float height = i * 150;
+				if (branchPosition[i] == side::LEFT)
+				{
+					branches[i].setPosition(610, height);
+					branches[i].setRotation(180);
+				}
+				else if (branchPosition[i] == side::RIGHT)
+				{
+					branches[i].setPosition(1330, height);
+					branches[i].setRotation(0);
+				}
+				else
+				{
+					branches[i].setPosition(3000, height);
+				}
+			}
 
 		}//end if(!paused)
 
-		//**DRAW SCENE**
-		//Clear Scene
+		 //**DRAW SCENE**
+		 //Clear Scene
 
 		window.clear();
 
 		//Draw Game Scene
 		window.draw(spriteBackground);
-		window.draw(spriteTree);
-		window.draw(spriteBee);
 		window.draw(spriteCloud);
 		window.draw(spriteCloud2);
 		window.draw(spriteCloud3);
+		for (int i = 0; i < numBranches; i++)//draw branches
+		{
+			window.draw(branches[i]);
+		}
+		window.draw(spriteTree);
+		window.draw(spriteBee);
 		window.draw(scoreText);
+
 		
+
 
 		if (paused)
 		{
 			window.draw(messageText);
 		}
-		
+
 		window.draw(timeBar);
 
 		//Display Scene
